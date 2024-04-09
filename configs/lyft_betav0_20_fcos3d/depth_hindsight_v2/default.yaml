@@ -1,0 +1,127 @@
+select_traversal_frames: [0, 7, 8]
+limit_pad_num_traversals: 5
+input_modality:
+  use_hindsight_lidar: true
+depth_reduction: random
+depth_filler: -1.0
+load_dim: 5
+use_dim: 5
+reduce_beams: null
+
+depth_reduction_op: mean
+bbox_in_channels: 384
+
+train_pipeline:
+  - type: LoadImageFromFileMono3D
+  - type: LimitOrPadTraversals
+    limit_pad_num_traversals: ${limit_pad_num_traversals}
+    training: true
+  - type: LoadTraversalPointsFromFiles
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    use_cache: null
+    subsample_ratio: null
+  - type: LoadAnnotations3D
+    with_attr_label: true
+    with_bbox: true
+    with_bbox_3d: true
+    with_bbox_depth: true
+    with_label: true
+    with_label_3d: true
+  # - type: Resize
+  #   img_scale: [1224, 1024]
+  #   keep_ratio: true
+  - type: RandomFlip3DOriginal
+    flip_ratio_bev_horizontal: 0.5
+  - type: Normalize
+    mean: ${img_norm_cfg.mean}
+    std: ${img_norm_cfg.std}
+    to_rgb: false
+  - type: Pad
+    size_divisor: 32
+  - type: GenerateDepthMapSingle
+    channel_first: false
+    reduction_method: ${depth_reduction}
+    filler: ${depth_filler}
+  - type: DefaultFormatBundle3D
+    classes: ${class_names}
+  - type: CustomCollect3D
+    keys:
+      - img
+      - gt_bboxes
+      - gt_labels
+      - attr_labels
+      - gt_bboxes_3d
+      - gt_labels_3d
+      - centers2d
+      - depths
+      - hindsight_points_depth_map
+
+test_pipeline:
+  - type: LoadImageFromFileMono3D
+  - type: LimitOrPadTraversals
+    limit_pad_num_traversals: ${limit_pad_num_traversals}
+    training: true
+  - type: LoadTraversalPointsFromFiles
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    use_cache: null
+    subsample_ratio: null
+  - type: MultiScaleFlipAug
+    scale_factor: 1.0
+    flip: false
+    transforms:
+      - type: RandomFlip3DOriginal
+      - type: Normalize
+        mean: ${img_norm_cfg.mean}
+        std: ${img_norm_cfg.std}
+        to_rgb: false
+      - type: Pad
+        size_divisor: 32
+      - type: GenerateDepthMapSingle
+        channel_first: false
+        reduction_method: ${depth_reduction}
+        filler: ${depth_filler}
+      - type: DefaultFormatBundle3D
+        classes: ${class_names}
+        with_label: false
+      - type: CustomCollect3D
+        keys: [img, hindsight_points_depth_map]
+
+
+data:
+  train:
+    hindsight_info_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_train.pkl"}
+  val:
+    hindsight_info_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_val.pkl"}
+  test:
+    hindsight_info_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_val.pkl"}
+
+
+model:
+  depth_condition:
+    type: Dtransform
+    backbone:
+      type: ResNet
+      in_channels: 1
+      depth: 18
+      norm_cfg:
+        requires_grad: false
+        type: BN
+      norm_eval: true
+      num_stages: 4
+      out_indices: [0, 1, 2, 3]
+      style: caffe
+    neck:
+      type: FPN
+      add_extra_convs: on_output
+      in_channels: [64, 128, 256, 512]
+      num_outs: 5
+      out_channels: 128
+      relu_before_extra_convs: true
+      start_level: 1
+    reduction: ${depth_reduction_op}

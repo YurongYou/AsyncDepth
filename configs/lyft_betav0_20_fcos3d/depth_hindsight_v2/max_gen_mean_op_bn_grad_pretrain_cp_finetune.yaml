@@ -1,0 +1,19 @@
+depth_reduction_op: mean
+depth_reduction: max
+
+
+model:
+  depth_condition:
+    backbone:
+      norm_cfg:
+        requires_grad: true
+      style: pytorch
+      with_cp: true
+      init_cfg:
+        type: Pretrained
+        checkpoint: open-mmlab://resnet18_v1c
+  train_cfg:
+    code_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+optimizer:
+  lr: 0.001

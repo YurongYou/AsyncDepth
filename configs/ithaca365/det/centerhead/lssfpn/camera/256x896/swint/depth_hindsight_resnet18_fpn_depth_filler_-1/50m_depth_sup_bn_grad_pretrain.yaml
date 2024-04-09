@@ -1,0 +1,53 @@
+reserve_single_sweep: true
+point_cloud_range: [0, -25.6, -5.0, 51.2, 25.6, 3.0]
+voxel_size: [0.1, 0.1, 0.2]
+grid_size: [512, 512, 41]
+post_center_limit_range: [-10, -35.6, -10.0, 61.2, 35.6, 10.0]
+depth_reduction_op: 'mean'
+
+model:
+  encoders:
+    camera:
+      vtransform:
+        in_channels: 384
+        depth_loss: 'smoothl1loss'
+        raw_image_size: [1208, 1920]
+        dbound: [1.0, 60.0, 0.5]
+      Dtransform:
+        type: "DtransformMultiImgs"
+        backbone:
+          type: ResNet
+          in_channels: 1
+          depth: 18
+          norm_cfg:
+            requires_grad: true
+            type: BN
+          norm_eval: true
+          num_stages: 4
+          out_indices: [0, 1, 2, 3]
+          style: pytorch
+          init_cfg:
+            type: Pretrained
+            checkpoint: open-mmlab://resnet18_v1c
+        neck:
+          type: FPN
+          add_extra_convs: on_output
+          in_channels: [64, 128, 256, 512]
+          num_outs: 5
+          out_channels: 128
+          relu_before_extra_convs: true
+          start_level: 1
+        reduction: ${depth_reduction_op}
+        use_gt_depth: false
+
+
+# lr_config:
+#   policy: cyclic
+#   target_ratio: 5.0
+#   cyclic_times: 1
+#   step_ratio_up: 0.4
+
+lr_config:
+  warmup: linear
+  warmup_iters: 500
+  warmup_ratio: 1.0e-3

@@ -1,0 +1,8 @@
+{
+    "exclude": [
+        "**/data",
+        "**/__pycache__",
+        "**/logs",
+        "**/runs",
+    ],
+}

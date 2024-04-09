@@ -1,0 +1,238 @@
+img_norm_cfg:
+  mean: [103.530, 116.280, 123.675]
+  std: [1.0, 1.0, 1.0]
+  to_rgb: false
+dataset_type: 'LyftMonoDataset'
+data_root: '/media/yurongy/data/lyft/'
+select_traversal_frames: null
+
+class_names:
+  - car
+  - truck
+  - bus
+  - bicycle
+  - pedestrian
+
+input_modality:
+  use_lidar: false
+  use_camera: true
+  use_radar: false
+  use_map: false
+  use_external: false
+
+train_pipeline:
+  - type: LoadImageFromFileMono3D
+  - type: LoadAnnotations3D
+    with_attr_label: true
+    with_bbox: true
+    with_bbox_3d: true
+    with_bbox_depth: true
+    with_label: true
+    with_label_3d: true
+  # - type: Resize
+  #   img_scale: [1224, 1024]
+  #   keep_ratio: true
+  - type: RandomFlip3DOriginal
+    flip_ratio_bev_horizontal: 0.5
+  - type: Normalize
+    mean: ${img_norm_cfg.mean}
+    std: ${img_norm_cfg.std}
+    to_rgb: false
+  - type: Pad
+    size_divisor: 32
+  - type: DefaultFormatBundle3D
+    classes: ${class_names}
+  - type: CustomCollect3D
+    keys:
+      - img
+      - gt_bboxes
+      - gt_labels
+      - attr_labels
+      - gt_bboxes_3d
+      - gt_labels_3d
+      - centers2d
+      - depths
+
+test_pipeline:
+  - type: LoadImageFromFileMono3D
+  - type: MultiScaleFlipAug
+    scale_factor: 1.0
+    flip: false
+    transforms:
+      - type: RandomFlip3DOriginal
+      - type: Normalize
+        mean: ${img_norm_cfg.mean}
+        std: ${img_norm_cfg.std}
+        to_rgb: false
+      - type: Pad
+        size_divisor: 32
+      - type: DefaultFormatBundle3D
+        classes: ${class_names}
+        with_label: false
+      - type: CustomCollect3D
+        keys: [img, ]
+
+data:
+  samples_per_gpu: 2
+  workers_per_gpu: 2
+  train:
+      type: ${dataset_type}
+      data_root: ${data_root}
+      ann_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_train_mono3d.coco.json"}
+      img_prefix: ${data_root}
+      classes: ${class_names}
+      pipeline: ${train_pipeline}
+      modality: ${input_modality}
+      test_mode: false
+      box_type_3d: Camera
+      select_traversal_frames: ${select_traversal_frames}
+  val:
+      type: ${dataset_type}
+      data_root: ${data_root}
+      ann_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_val_mono3d.coco.json"}
+      img_prefix: ${data_root}
+      classes: ${class_names}
+      pipeline: ${test_pipeline}
+      modality: ${input_modality}
+      test_mode: true
+      box_type_3d: Camera
+      select_traversal_frames: ${select_traversal_frames}
+  test:
+      type: ${dataset_type}
+      data_root: ${data_root}
+      ann_file: ${data_root + "beta_v0_dist_20_cutoff_1000_infos_val_mono3d.coco.json"}
+      classes: ${class_names}
+      pipeline: ${test_pipeline}
+      modality: ${input_modality}
+      test_mode: true
+      box_type_3d: Camera
+      select_traversal_frames: ${select_traversal_frames}
+
+bbox_in_channels: 256
+
+model:
+  type: FCOSMono3D
+  pretrained: open-mmlab://detectron2/resnet101_caffe
+  backbone:
+    type: ResNet
+    depth: 101
+    frozen_stages: 1
+    norm_cfg:
+      requires_grad: false
+      type: BN
+    norm_eval: true
+    num_stages: 4
+    out_indices: [0, 1, 2, 3]
+    style: caffe
+    dcn:
+      deform_groups: 1
+      fallback_on_stride: false
+      type: DCNv2
+    stage_with_dcn: [false, false, true, true]
+  bbox_head:
+    type: FCOSMono3DHead
+    attr_branch: [256,]
+    center_sampling: true
+    centerness_on_reg: true
+    cls_branch: [256, ]
+    conv_bias: true
+    dcn_on_last_conv: true
+    diff_rad_by_sin: true
+    dir_branch: [256, ]
+    dir_offset: 0.7854 # pi/4
+    feat_channels: 256
+    bbox_code_size: 7
+    group_reg_dims: [2, 1, 3, 1]  # offset, depth, size, rot
+    in_channels: ${bbox_in_channels}
+    loss_attr:
+      loss_weight: 1.0
+      type: CrossEntropyLoss
+      use_sigmoid: false
+    loss_bbox:
+      beta: ${1.0 / 7.0}
+      loss_weight: 1.0
+      type: SmoothL1Loss
+    loss_centerness:
+      loss_weight: 1.0
+      type: CrossEntropyLoss
+      use_sigmoid: true
+    loss_cls:
+      alpha: 0.25
+      gamma: 2.0
+      loss_weight: 1.0
+      type: FocalLoss
+      use_sigmoid: true
+    loss_dir:
+      loss_weight: 1.0
+      type: CrossEntropyLoss
+      use_sigmoid: false
+    norm_on_bbox: true
+    num_classes: 5
+    pred_attrs: false
+    pred_velo: false
+    reg_branch:
+      - [256,]  # offset
+      - [256,]  # depth
+      - [256,]  # size
+      - [256,]  # rot
+    stacked_convs: 2
+    strides: [8, 16, 32, 64, 128]
+    use_direction_classifier: true
+  neck:
+    type: FPN
+    add_extra_convs: on_output
+    in_channels: [256, 512, 1024, 2048]
+    num_outs: 5
+    out_channels: 256
+    relu_before_extra_convs: true
+    start_level: 1
+  test_cfg:
+    max_per_img: 200
+    min_bbox_size: 0
+    nms_across_levels: false
+    nms_pre: 1000
+    nms_thr: 0.8
+    score_thr: 0.05
+    use_rotate_nms: true
+  train_cfg:
+    allowed_border: 0
+    code_weight: [1.0, 1.0, 0.2, 1.0, 1.0, 1.0, 1.0]
+    debug: false
+    pos_weight: -1
+
+
+optimizer:
+  type: SGD
+  lr: 0.002
+  momentum: 0.9
+  weight_decay: 0.0001
+  paramwise_cfg:
+    bias_lr_mult: 2.0
+    bias_decay_mult: 0.0
+
+optimizer_config:
+  grad_clip:
+    max_norm: 35
+    norm_type: 2
+
+
+lr_config:
+  policy: step
+  warmup: linear
+  warmup_iters: 500
+  warmup_ratio: ${1.0 / 3.0}
+  step: [10, 15, 25]
+
+runner:
+  type: CustomEpochBasedRunner
+  max_epochs: ${max_epochs}
+
+max_epochs: 20
+
+evaluation:
+  interval: 2
+  pipeline: ${test_pipeline}
+  eval_by_distance: true
+  close_only: true
+
+fp16: null

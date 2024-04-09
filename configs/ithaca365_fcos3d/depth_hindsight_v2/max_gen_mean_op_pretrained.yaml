@@ -1,0 +1,11 @@
+depth_reduction_op: mean
+depth_reduction: max
+
+model:
+  depth_condition:
+    type: Dtransform
+    backbone:
+      style: pytorch
+      init_cfg:
+        type: Pretrained
+        checkpoint: open-mmlab://resnet18_v1c

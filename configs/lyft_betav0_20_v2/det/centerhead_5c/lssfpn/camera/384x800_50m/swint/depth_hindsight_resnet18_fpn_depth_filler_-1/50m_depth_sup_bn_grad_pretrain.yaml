@@ -1,0 +1,38 @@
+depth_reduction_op: 'mean'
+
+model:
+  encoders:
+    camera:
+      vtransform:
+        in_channels: 384
+      Dtransform:
+        type: "DtransformMultiImgs"
+        backbone:
+          type: ResNet
+          in_channels: 1
+          depth: 18
+          norm_cfg:
+            requires_grad: true
+            type: BN
+          norm_eval: true
+          num_stages: 4
+          out_indices: [0, 1, 2, 3]
+          style: pytorch
+          init_cfg:
+            type: Pretrained
+            checkpoint: open-mmlab://resnet18_v1c
+        neck:
+          type: FPN
+          add_extra_convs: on_output
+          in_channels: [64, 128, 256, 512]
+          num_outs: 5
+          out_channels: 128
+          relu_before_extra_convs: true
+          start_level: 1
+        reduction: ${depth_reduction_op}
+        use_gt_depth: false
+
+lr_config:
+  warmup: linear
+  warmup_iters: 500
+  warmup_ratio: 1.0e-3

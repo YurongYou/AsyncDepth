@@ -1,0 +1,13 @@
+model:
+  encoders:
+    lidar: null
+    camera:
+      vtransform:
+        type: LSSTransform
+        image_size: ${image_size}
+        xbound: ${[point_cloud_range[0], point_cloud_range[3], voxel_size[0] * 4]}
+        ybound: ${[point_cloud_range[1], point_cloud_range[4], voxel_size[1] * 4]}
+        zbound: [-10.0, 10.0, 20.0]
+        dbound: [1.0, 100.0, 0.5]
+
+lr_config: null

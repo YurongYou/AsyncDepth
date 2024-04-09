@@ -1,0 +1,26 @@
+point_cloud_range: [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+voxel_size: [0.1, 0.1, 0.2]
+grid_size: [1024, 1024, 41]
+post_center_limit_range: [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
+
+image_size: [384, 800]
+bot_pct_lim: [0.17, 0.17]
+
+augment2d:
+  resize: [[0.60, 0.72], [0.66, 0.66]]
+  rotate: [-5.4, 5.4]
+  gridmask:
+    prob: 0.0
+    fixed_prob: true
+
+
+model:
+  encoders:
+    camera:
+      vtransform:
+        dbound: [1.0, 60.0, 0.5]
+
+lr_config:
+  warmup: linear
+  warmup_iters: 500
+  warmup_ratio: 1.0e-3

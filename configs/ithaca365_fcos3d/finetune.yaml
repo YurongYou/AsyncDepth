@@ -1,0 +1,6 @@
+model:
+  train_cfg:
+    code_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+optimizer:
+  lr: 0.001

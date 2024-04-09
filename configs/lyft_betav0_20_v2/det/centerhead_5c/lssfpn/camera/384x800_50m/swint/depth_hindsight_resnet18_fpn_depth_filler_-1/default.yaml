@@ -1,0 +1,312 @@
+
+limit_pad_num_traversals: 5
+reserve_single_sweep: true
+
+input_modality:
+  use_hindsight_lidar: true
+select_traversal_frames: [0, 7, 8]
+depth_reduction: max
+depth_filler: -1.0
+find_unused_parameters: true
+
+train_pipeline:
+  -
+    type: LoadMultiViewImageFromFiles
+    to_float32: true
+  -
+    type: LimitOrPadTraversals
+    limit_pad_num_traversals: ${limit_pad_num_traversals}
+    training: true
+  # -
+  #   type: LoadMultiViewTraversalImageFromFiles
+  #   to_float32: true
+  -
+    type: LoadPointsFromFile
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    load_augmented: ${load_augmented}
+    reserve_single_sweep: ${reserve_single_sweep}
+  -
+    type: LoadPointsFromMultiSweeps
+    sweeps_num: 10
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    pad_empty_sweeps: true
+    remove_close: true
+    load_augmented: ${load_augmented}
+  -
+    type: LoadTraversalPointsFromFiles
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    use_cache: null
+    subsample_ratio: null
+  -
+    type: LoadAnnotations3D
+    with_bbox_3d: true
+    with_label_3d: true
+    with_attr_label: False
+  # -
+  #   type: ObjectPaste
+  #   stop_epoch: ${gt_paste_stop_epoch}
+  #   db_sampler:
+  #     dataset_root: ${dataset_root}
+  #     info_path: ${dataset_root + "nuscenes_dbinfos_train.pkl"}
+  #     rate: 1.0
+  #     prepare:
+  #       filter_by_difficulty: [-1]
+  #       filter_by_min_points:
+  #         car: 5
+  #         truck: 5
+  #         bus: 5
+  #         trailer: 5
+  #         construction_vehicle: 5
+  #         traffic_cone: 5
+  #         barrier: 5
+  #         motorcycle: 5
+  #         bicycle: 5
+  #         pedestrian: 5
+  #     classes: ${object_classes}
+  #     sample_groups:
+  #       car: 2
+  #       truck: 3
+  #       construction_vehicle: 7
+  #       bus: 4
+  #       trailer: 6
+  #       barrier: 2
+  #       motorcycle: 6
+  #       bicycle: 6
+  #       pedestrian: 2
+  #       traffic_cone: 2
+  #     points_loader:
+  #       type: LoadPointsFromFile
+  #       coord_type: LIDAR
+  #       load_dim: ${load_dim}
+  #       use_dim: ${use_dim}
+  #       reduce_beams: ${reduce_beams}
+  -
+    type: ImageAug3D
+    final_dim: ${image_size}
+    resize_lim: ${augment2d.resize[0]}
+    bot_pct_lim: ${bot_pct_lim}
+    rot_lim: ${augment2d.rotate}
+    rand_flip: true
+    is_train: true
+    rotate_first: true
+  # -
+  #   type: ImageAug3D
+  #   final_dim: ${image_size_hindsight}
+  #   resize_lim: ${augment2d_hindsight.resize[0]}
+  #   bot_pct_lim: ${bot_pct_lim_hindsight}
+  #   rot_lim: ${augment2d_hindsight.rotate}
+  #   rand_flip: true
+  #   is_train: true
+  #   on_hindsight_images: true
+  -
+    type: GlobalRotScaleTrans
+    resize_lim: ${augment3d.scale}
+    rot_lim: ${augment3d.rotate}
+    trans_lim: ${augment3d.translate}
+    is_train: true
+  # -
+  #   type: LoadBEVSegmentation
+  #   dataset_root: ${dataset_root}
+  #   xbound: [-50.0, 50.0, 0.5]
+  #   ybound: [-50.0, 50.0, 0.5]
+  #   classes: ${map_classes}
+  -
+    type: RandomFlip3D
+  -
+    type: PointsRangeFilter
+    point_cloud_range: ${point_cloud_range}
+  -
+    type: ObjectRangeFilter
+    point_cloud_range: ${point_cloud_range}
+  -
+    type: ObjectNameFilter
+    classes: ${object_classes}
+  -
+    type: ImageNormalize
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  -
+    type: GridMask
+    use_h: true
+    use_w: true
+    max_epoch: ${max_epochs}
+    rotate: 1
+    offset: false
+    ratio: 0.5
+    mode: 1
+    prob: ${augment2d.gridmask.prob}
+    fixed_prob: ${augment2d.gridmask.fixed_prob}
+  -
+    type: PointShuffle
+  -
+    type: GenerateDepthMap
+    reduction_method: ${depth_reduction}
+    filler: ${depth_filler}
+  -
+    type: DefaultFormatBundle3D
+    classes: ${object_classes}
+  -
+    type: Collect3D
+    keys:
+      - img
+      - points
+      - gt_bboxes_3d
+      - gt_labels_3d
+      - hindsight_points
+      - hindsight_lidar2lidar # have to be put in data because of data layout
+      - single_sweep_points
+      - points_depth_map
+      - hindsight_points_depth_map
+      # - hindsight_img
+      # - gt_masks_bev
+    meta_keys:
+      - camera_intrinsics
+      - camera2ego
+      - lidar2ego
+      - lidar2camera
+      - camera2lidar
+      - lidar2image
+      - img_aug_matrix
+      - lidar_aug_matrix
+      # - hindsight_camera_intrinsics
+      # - hindsight_camera2lidar
+      # - hindsight_img_aug_matrix
+
+test_pipeline:
+  -
+    type: LoadMultiViewImageFromFiles
+    to_float32: true
+  -
+    type: LimitOrPadTraversals
+    limit_pad_num_traversals: ${limit_pad_num_traversals}
+    training: false
+  # -
+  #   type: LoadMultiViewTraversalImageFromFiles
+  #   to_float32: true
+  -
+    type: LoadPointsFromFile
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    load_augmented: ${load_augmented}
+    reserve_single_sweep: ${reserve_single_sweep}
+  -
+    type: LoadPointsFromMultiSweeps
+    sweeps_num: 10
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    pad_empty_sweeps: true
+    remove_close: true
+    load_augmented: ${load_augmented}
+  -
+    type: LoadTraversalPointsFromFiles
+    coord_type: LIDAR
+    load_dim: ${load_dim}
+    use_dim: ${use_dim}
+    reduce_beams: ${reduce_beams}
+    use_cache: null
+    subsample_ratio: null
+  -
+    type: LoadAnnotations3D
+    with_bbox_3d: true
+    with_label_3d: true
+    with_attr_label: False
+  -
+    type: ImageAug3D
+    final_dim: ${image_size}
+    resize_lim: ${augment2d.resize[1]}
+    bot_pct_lim: ${bot_pct_lim}
+    rot_lim: [0.0, 0.0]
+    rand_flip: false
+    is_train: false
+    rotate_first: true
+  # -
+  #   type: ImageAug3D
+  #   final_dim: ${image_size_hindsight}
+  #   resize_lim: ${augment2d_hindsight.resize[1]}
+  #   bot_pct_lim: ${bot_pct_lim}
+  #   rot_lim: [0.0, 0.0]
+  #   rand_flip: false
+  #   is_train: false
+  #   rotate_first: true
+  #   on_hindsight_images: true
+  -
+    type: GlobalRotScaleTrans
+    resize_lim: [1.0, 1.0]
+    rot_lim: [0.0, 0.0]
+    trans_lim: 0.0
+    is_train: false
+  # -
+  #   type: LoadBEVSegmentation
+  #   dataset_root: ${dataset_root}
+  #   xbound: [-50.0, 50.0, 0.5]
+  #   ybound: [-50.0, 50.0, 0.5]
+  #   classes: ${map_classes}
+  -
+    type: PointsRangeFilter
+    point_cloud_range: ${point_cloud_range}
+  -
+    type: ImageNormalize
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  -
+    type: GenerateDepthMap
+    reduction_method: ${depth_reduction}
+    filler: ${depth_filler}
+  -
+    type: DefaultFormatBundle3D
+    classes: ${object_classes}
+  -
+    type: Collect3D
+    keys:
+      - img
+      - points
+      - gt_bboxes_3d
+      - gt_labels_3d
+      - single_sweep_points
+      - hindsight_points
+      - hindsight_lidar2lidar # have to be put in data because of data layout
+      - single_sweep_points
+      - points_depth_map
+      - hindsight_points_depth_map
+      # - hindsight_img
+      # - gt_masks_bev
+    meta_keys:
+      - camera_intrinsics
+      - camera2ego
+      - lidar2ego
+      - lidar2camera
+      - camera2lidar
+      - lidar2image
+      - img_aug_matrix
+      - lidar_aug_matrix
+      # - hindsight_camera_intrinsics
+      # - hindsight_camera2lidar
+      # - hindsight_img_aug_matrix
+
+lr_config:
+  policy: cyclic
+  target_ratio: 5.0
+  cyclic_times: 1
+  step_ratio_up: 0.4
+
+# voxel_size: [0.075, 0.075, 0.2]
+# point_cloud_range: [-90.0, -90.0, -5.0, 90.0, 90.0, 3.0]
+# grid_size: [2400, 2400, 41]
+model:
+  encoders:
+    camera:
+      vtransform:
+        type: LSSTransform
+        raw_image_size: [1024, 1224]
+        depth_loss: 'smoothl1loss'
