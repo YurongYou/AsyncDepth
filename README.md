@@ -240,13 +240,13 @@ torchpack dist-run -np 4 python tools/test.py <config_path> \
 
 | Dataset    | Model      | Async Depth?        | ckpt | config |
 |------------|------------|---------------------|------|------|
-| Lyft       | FCOS3D     | ✅                   |[link](https://drive.google.com/file/d/1LY6my6VKozhAmVifJLFA3SYvdE64t5NL/view?usp=drive_link)|[config](configs/lyft_betav0_20_fcos3d/depth_hindsight_v2/max_gen_mean_op_bn_grad_pretrain_cp_finetune.yaml)|
-|            | Lift-Splat | ✅                   |[link](https://drive.google.com/file/d/1NfNuuJDTnSnqq4JrvTlPHndwk1Yc3Kwd/view?usp=drive_link)|[config](configs/lyft_betav0_20_v2/det/centerhead_5c/lssfpn/camera/384x800_50m/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain.yaml)|
-|            | Lift-Splat | ❌                   |[link](https://drive.google.com/file/d/15AFwKBSfHuTIIS02l7HE7jicI18JAJSu/view?usp=drive_link)|[config](configs/lyft_betav0_20_v2/det/centerhead_5c/lssfpn/camera/384x800_50m/swint/depth_sup_lr_linear_rampup.yaml)|
-| Ithaca-365 | FCOS3D     | ✅                   |[link](https://drive.google.com/file/d/1Lco2EGbbW_B_Y0YfPUtCHV1Zg0AIgid8/view?usp=drive_link)|[config](configs/ithaca365_fcos3d/depth_hindsight_v2/max_gen_mean_op_pretrained_finetune.yaml)|
-|            | Lift-Splat | ✅                   |[link](https://drive.google.com/file/d/1D8QDxxfQzMBoUb4QqlicWeQtoxnaf7f_/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain.yaml)|
-|            | Lift-Splat | ❌                   |[link](https://drive.google.com/file/d/1Aum4WF9KeZ-5or6-SCy26dpvihFu9mRk/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/50m_depth_sup_lr_linear_rampup.yaml)|
-|            | Lift-Splat | Sync-Depth (Oracle) |[link](https://drive.google.com/file/d/1stvDLd53E2MXIx57ux7eGWfYPGjTK_qR/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain_gt_depth_conditioning.yaml)|
+| Lyft       | FCOS3D     | ✅                   |[link](https://drive.google.com/file/d/1rWN0j_60Wfe0pqQsQcz7_vky5K1mUpa4/view?usp=drive_link)|[config](configs/lyft_betav0_20_fcos3d/depth_hindsight_v2/max_gen_mean_op_bn_grad_pretrain_cp_finetune.yaml)|
+|            | Lift-Splat | ✅                   |[link](https://drive.google.com/file/d/1rgQh_sJeEuDpaJaM5NXZ0jgNJ9iSfeXs/view?usp=drive_link)|[config](configs/lyft_betav0_20_v2/det/centerhead_5c/lssfpn/camera/384x800_50m/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain.yaml)|
+|            | Lift-Splat | ❌                   |[link](https://drive.google.com/file/d/1_bR5AC7ixvfwUdQSdvyPToEoDKoWpvXx/view?usp=drive_link)|[config](configs/lyft_betav0_20_v2/det/centerhead_5c/lssfpn/camera/384x800_50m/swint/depth_sup_lr_linear_rampup.yaml)|
+| Ithaca-365 | FCOS3D     | ✅                   |[link](https://drive.google.com/file/d/1iVSz09vQY8doAENl0dWEhqZcafheayMc/view?usp=drive_link)|[config](configs/ithaca365_fcos3d/depth_hindsight_v2/max_gen_mean_op_pretrained_finetune.yaml)|
+|            | Lift-Splat | ✅                   |[link](https://drive.google.com/file/d/1EQJOTeY_HxGZbyEHMacXYMpsXlF_i1c6/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain.yaml)|
+|            | Lift-Splat | ❌                   |[link](https://drive.google.com/file/d/1ujLclBwuNouiFofEKqaoIPtZnOYwIVLN/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/50m_depth_sup_lr_linear_rampup.yaml)|
+|            | Lift-Splat | Sync-Depth (Oracle) |[link](https://drive.google.com/file/d/1dlSnPnnkw0SDi5eOMULxuLclUgxAj1r_/view?usp=drive_link)|[config](configs/ithaca365/det/centerhead/lssfpn/camera/256x896/swint/depth_hindsight_resnet18_fpn_depth_filler_-1/50m_depth_sup_bn_grad_pretrain_gt_depth_conditioning.yaml)|
 
 ## Contact
 Please open an issue if you have any questions about using this repo.
